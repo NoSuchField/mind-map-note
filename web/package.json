@@ -1,0 +1,53 @@
+{
+  "name": "question-bank",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve --mode dev",
+    "build": "vue-cli-service build --mode prod",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@highlightjs/vue-plugin": "^2.1.0",
+    "codemirror": "^5.65.1",
+    "codemirror-editor-vue3": "^1.0.1",
+    "core-js": "^3.6.5",
+    "he": "^1.2.0",
+    "highlight.js": "^11.4.0",
+    "markdown-it": "^12.3.2",
+    "vue": "^3.0.0",
+    "vue-codemirror": "^4.0.6",
+    "vue-jstree": "^2.1.6",
+    "vue3-blocks-tree": "^0.6.1",
+    "vue3-tree": "^0.11.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "@vue/compiler-sfc": "^3.0.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^7.0.0",
+    "node-sass": "^7.0.1"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/vue3-essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}
