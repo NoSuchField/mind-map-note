@@ -3,6 +3,7 @@ package com.mindmapnote.core.scheduler;
 import com.mindmapnote.core.service.NodeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
 /**
  * 定时移除孤儿节点
@@ -10,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
  * @author : XinYu
  * @date : 2022-03-08 23:05
  */
+@Component
 public class RemoveOrphanNodeTask {
 
     @Autowired
