@@ -33,4 +33,5 @@ public interface QuestionMapper {
 
     List<QuestionTreeNode> getTree();
 
+    void removeOrphanNodes();
 }

@@ -71,4 +71,9 @@
     <delete id="delete">
         DELETE FROM t_question WHERE id = #{id}
     </delete>
+    <delete id="removeOrphanNodes">
+        DELETE FROM t_question WHERE `parent` IS NOT NULL AND `parent` NOT IN (
+            SELECT `id` FROM (SELECT `id` FROM t_question)t
+        )
+    </delete>
 </mapper>

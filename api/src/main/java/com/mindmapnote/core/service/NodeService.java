@@ -3,6 +3,9 @@ package com.mindmapnote.core.service;
 import com.mindmapnote.core.mapper.QuestionMapper;
 import com.mindmapnote.core.model.Question;
 import com.mindmapnote.core.model.QuestionTreeNode;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -16,8 +19,11 @@ import java.util.stream.Collectors;
  * @author Leon
  * @date 2022/02/16 21:20
  */
+@Slf4j
 @Service
-public class QuestionService {
+public class NodeService {
+
+    private final Logger logger = LoggerFactory.getLogger(NodeService.class);
 
     @Resource
     private QuestionMapper questionMapper;
@@ -84,6 +90,11 @@ public class QuestionService {
         }
         Random r = new Random();
         return get(questionListWeighted.get(r.nextInt(questionListWeighted.size())).getId());
+    }
+
+    public void removeOrphanNodes() {
+        logger.info("removing all orphan nodes");
+        questionMapper.removeOrphanNodes();
     }
 
     private List<QuestionTreeNode> getChildren(QuestionTreeNode root,List<QuestionTreeNode> all){
