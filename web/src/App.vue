@@ -1,7 +1,7 @@
 <template>
-  <div id="app" style="width: 100%">
+  <div id="app" style="width: 100%" :class="{ 'app-no-padding': read, 'app-padding': !read }">
 
-  <div class="header" style="position: fixed; top: 0">
+  <div class="header" style="position: fixed; top: 0" v-if="!read">
         
 
         <div class="header-edit-btn" v-if="currentQuestion.id" @click="overview">Overview</div>
@@ -28,13 +28,13 @@
         <div class="header-edit-btn" v-if="currentQuestion.id" @click="deleteQuestion">Delete</div>
       </div>
 
-  <div class="left-pan">
+  <div class="left-pan" v-if="!read">
 
   <VueBlocksTree :props="{label: 'label', expand: 'expand', children: 'children',  key:'id'}" :data="treeData" :horizontal="true" :collapsable="true" @node-click="onNodeClick"></VueBlocksTree>
   
   </div>
 
-  <div style="display: flex; flex-direction: column" :class="{ 'right-pan': showEditor, 'right-pan-no-editor': !showEditor }">
+  <div style="display: flex; flex-direction: column" :class="{ 'right-pan': read, 'right-pan-no-editor': !read }">
 
   <input type="text" class="title-input" v-model="currentQuestion.title" />
 
@@ -69,7 +69,7 @@
         :options="cmOptions"
         border
         placeholder="test placeholder"
-        
+        :height="1000"
         @change="renderQuestion"
       />
     </div>
@@ -117,7 +117,15 @@ export default {
      const fetchAsync = () => {
       const xhr = new XMLHttpRequest();
 
-    let id = new URLSearchParams('?' + window.location.href.split('?')[1]).get('id')
+    let params = new URLSearchParams('?' + window.location.href.split('?')[1])
+    
+    let id = params.get('id')
+    //this.read = params.get('read')
+
+    //if (this.read && id) {
+        // this.getNode(id)
+    //}
+
     if (id) {   
         localStorage.setItem("rootId", id)
     }
@@ -162,6 +170,15 @@ export default {
     
     if (!(rootId && rootId != 0)) {
       document.getElementsByClassName("org-tree-node-label")[0].style.display="none"
+    }
+
+    let params = new URLSearchParams('?' + window.location.href.split('?')[1])
+    
+    let id = params.get('id')
+    this.read = params.get('read')
+
+    if (this.read && id) {
+        this.getNode(id)
     }
   },
   methods: {
@@ -444,6 +461,7 @@ fetch(baseUrl + "/question/update", {
   },
   data() {
     return {
+      read: false,
       showEditor: false,
       rootId: 0,
       moveTarget: 0,
@@ -474,7 +492,6 @@ fetch(baseUrl + "/question/update", {
   color: #2c3e50;
   display: flex;
   flex-direction: row;
-  padding-top: 30px
 }
 
 * {
@@ -570,7 +587,6 @@ html, body {
 
 .right-pan {
 	flex-grow: 1;
-	padding-left: 920px;
 }
 
 .right-pan-no-editor {
@@ -620,5 +636,13 @@ html, body {
 
 #codeMirrorEditor {
   height: calc(100%-60px);
+}
+
+.app-padding {
+    padding-top: 30px;
+}
+
+.app-no-padding {
+    padding-top: 0;
 }
 </style>
