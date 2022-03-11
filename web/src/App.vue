@@ -116,6 +116,12 @@ export default {
 
      const fetchAsync = () => {
       const xhr = new XMLHttpRequest();
+
+    let id = new URLSearchParams('?' + window.location.href.split('?')[1]).get('id')
+    if (id) {   
+        localStorage.setItem("rootId", id)
+    }
+
       let rootId = localStorage.getItem("rootId")
       let flag = rootId && rootId != 0
       xhr.open('GET', baseUrl + '/question/tree' + (flag ? ('?rootId='+rootId) : ''), false);
@@ -153,7 +159,7 @@ export default {
     this.he = require('he');
     
     let rootId = localStorage.getItem("rootId")
-
+    
     if (!(rootId && rootId != 0)) {
       document.getElementsByClassName("org-tree-node-label")[0].style.display="none"
     }
@@ -179,13 +185,12 @@ fetch(baseUrl + "/question/update", {
         .catch((error) => {
           console.error('Error:', error);
         });
-
       }
     },
 
     overview: function() {
       localStorage.setItem("rootId", 0)
-      window.location.reload();
+      window.location.href = "/";
     },
 
     setMoveTarget: function() {
@@ -236,11 +241,8 @@ fetch(baseUrl + "/question/update", {
 
     setAsRoot: function() {
       this.rootId = this.currentQuestion.id
-
       localStorage.setItem('rootId', this.rootId)
-
-      window.location.reload();
-
+      window.location.href = "/?id=" + this.rootId;
     },
 
     getRandomQuestion: function() {
@@ -386,25 +388,29 @@ fetch(baseUrl + "/question/update", {
         this.currentNode = e.target
       }
 
-      let url = baseUrl + "/question/get?id=" + node.id
-      fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-        .then(response => response.json())
-        .then(data => {
-          this.currentQuestion = data.result
+      
+        this.getNode(node.id)
+    },
 
-          this.renderQuestion()
-          this.renderAnswer()
+    getNode: function(id) {
+        let url = baseUrl + "/question/get?id=" + id
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            })
+            .then(response => response.json())
+            .then(data => {
+            this.currentQuestion = data.result
 
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-        });
+            this.renderQuestion()
+            this.renderAnswer()
 
+            })
+            .catch((error) => {
+            console.error('Error:', error);
+            });
     },
     
     extractCode: function(html) {
