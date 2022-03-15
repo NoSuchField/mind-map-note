@@ -9,9 +9,9 @@
             <div class="header-edit-btn" v-if="currentQuestion.id" @click="addRoot">Add Root</div>
             <div class="header-edit-btn" v-if="currentQuestion.id" @click="newQuestion">Add Child</div>
             <div class="header-edit-btn" v-if="!currentQuestion.id" @click="cancelNew">Cancel</div>
-            <div class="header-edit-btn" v-if="currentQuestion.id" @click="upDownQuestion('up')">Up</div>
-            <div class="header-edit-btn" v-if="currentQuestion.id" @click="upDownQuestion('down')">Down</div>
-            <div class="header-edit-btn" v-if="currentQuestion.id" @click="deleteQuestion">Delete</div>
+            <div class="header-edit-btn" v-if="currentQuestion.id" @click="upDownQuestion(treeData, 'up')">Up</div>
+            <div class="header-edit-btn" v-if="currentQuestion.id" @click="upDownQuestion(treeData, 'down')">Down</div>
+            <div class="header-edit-btn" v-if="currentQuestion.id" @click="deleteQuestion(treeData)">Delete</div>
         </div>
 
         <div class="left-pan" v-if="!read">
@@ -22,8 +22,8 @@
             <div style="display: flex;">
                 <input type="text" class="title-input" v-model="currentQuestion.title"/>
                 <div style="width: 35px; height: 35px; margin: 20px 20px 0 0; border: 1px solid #66CC66" v-if="!read">
-                    <img v-if="showEditor" src="/img/save.svg" style="width: 35px; height: 35px" @click="save(treeData)" />
-                    <img v-if="!showEditor" src="/img/edit-file.svg" style="width: 35px; height: 35px" @click="hideEdit" />
+                    <img v-if="editMode" src="/img/save.svg" style="width: 35px; height: 35px" @click="save(treeData)" />
+                    <img v-if="!editMode" src="/img/edit-file.svg" style="width: 35px; height: 35px" @click="hideEdit" />
                 </div>
             </div>
         
@@ -32,7 +32,7 @@
             </div>
         </div>
 
-        <div class="cm" id="codeMirrorEditor" v-if="showEditor">
+        <div class="cm" id="codeMirrorEditor" v-if="editMode">
             <Codemirror
             v-model:value="currentQuestion.detail"
             :options="cmOptions"
@@ -79,7 +79,7 @@ export default {
             }
         }
 
-        const testEcho = (tree, newTree) => {
+        const refreshTree = (tree, newTree) => {
             tree.children = []
             nextTick(() => {
                 newTree.children.forEach((node) => {
@@ -122,30 +122,37 @@ export default {
             treeOrientation,
             fetchAsync,
             treeNodes,
-            testEcho
+            refreshTree
         }
         return data
     },
 
     mounted() {
-    var MarkdownIt = require('markdown-it')
-    this.md = new MarkdownIt()
-    this.he = require('he');
-    
-    let rootId = localStorage.getItem("rootId")
-    
-    if (!(rootId && rootId != 0)) {
-        document.getElementsByClassName("org-tree-node-label")[0].style.display="none"
-    }
+        var MarkdownIt = require('markdown-it')
+        this.md = new MarkdownIt()
+        this.he = require('he');
 
-    let params = new URLSearchParams('?' + window.location.href.split('?')[1])
-    
-    let id = params.get('id')
-    this.read = params.get('read')
+        let rootNode = document.getElementsByClassName('org-tree-node-label-inner')[0]
 
-    if (this.read && id) {
-        this.getNode(id)
-    }
+        let rootId = localStorage.getItem("rootId")
+        if (!(rootId && rootId != 0)) {
+            rootNode.style.display="none"
+            rootNode = document.getElementsByClassName('org-tree-node-label-inner')[1]
+            rootId = this.treeNodes.children[0].id
+        }
+        this.currentNode = rootNode
+        rootNode.style.backgroundColor="#0BBC7A"
+        rootNode.style.color="#FFFFFF"
+        this.getNode(rootId)
+
+        let params = new URLSearchParams('?' + window.location.href.split('?')[1])
+        
+        let id = params.get('id')
+        this.read = params.get('read')
+
+        if (this.read && id) {
+            this.getNode(id)
+        }
     },
     methods: {
         moveQuestion: function() {
@@ -178,7 +185,7 @@ export default {
         setMoveTarget: function() {
             this.moveTarget = this.currentQuestion.id
             if(!this.moveTarget){
-            this.moveTarget = 0
+                this.moveTarget = 0
             }
         },
 
@@ -211,7 +218,7 @@ export default {
             window.location.href = "/?id=" + this.rootId;
         },
 
-        deleteQuestion: function() {
+        deleteQuestion: function(tree) {
             let url = baseUrl + "/question/delete?id=" + this.currentQuestion.id
             fetch(url, {
                 method: 'POST',
@@ -223,7 +230,8 @@ export default {
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
-                window.location.reload();
+                let treeNodes = this.fetchAsync()
+                this.refreshTree(tree, treeNodes)
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -234,82 +242,64 @@ export default {
             this.questionHtml = this.extractCode(this.md.render(this.currentQuestion.detail))
         },
 
-        upDownQuestion: function(str) {
+        upDownQuestion: function(tree, str) {
             let url = baseUrl + "/question/" + str + "?id=" + this.currentQuestion.id
             fetch(url, {
                 method: 'POST',
                 headers: {
-                'Content-Type': 'application/json',
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({}),
             })
             .then(response => response.json())
             .then(data => {
+
+                this.$nextTick(() => {
+                    let treeNodes = this.fetchAsync()
+                    this.refreshTree(tree, treeNodes)
+                })
+
                 console.log('Success:', data);
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
         },
-        toggleEdit: function() {
-
+        save (tree) {
             let url = baseUrl + "/question/" + (this.currentQuestion.id ? "update" : "add")
-
-            if (this.editMode) {
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                    'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(this.currentQuestion),
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(this.currentQuestion),
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.hideEdit()
+                this.$nextTick(() => {
+                let treeNodes = this.fetchAsync()
+                    this.refreshTree(tree, treeNodes) 
                 })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Success:', data);
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
-            }
-            let editMode = this.editMode
-            let elements = document.getElementsByClassName("codemirror-container");
-            Array.prototype.forEach.call(elements, function (element) {
-                element.style.height=editMode ? '800px' : '0'
-                element.style.border=editMode ? '1px solid #dddddd' : 'none'
+                this.markCurrent()
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
             });
         },
 
-        save (tree) {
-            this.hideEdit()
-            this.toggleEdit()
-            this.$nextTick(() => {
-                let treeNodes = this.fetchAsync()
-                this.testEcho(tree, treeNodes)
-            })
-        },
-
         hideEdit: function(){
-            this.showEditor = !this.showEditor
+            this.editMode = !this.editMode
         },
 
         onNodeClick (e, node) {
-            if (this.currentNode.nodeName) {
-                this.currentNode.style.backgroundColor="#FFFFFF"
-                this.currentNode.style.color="#2F3F52"
-            }
-            if (e.target.nodeName == "SPAN") {
-                e.target.parentElement.style.backgroundColor="#0BBC7A"
-                e.target.parentElement.style.color="#FFFFFF"
-                this.currentNode = e.target.parentElement
-            } else {
-                e.target.style.backgroundColor="#0BBC7A"
-                e.target.style.color="#FFFFFF"
-                this.currentNode = e.target
-            }
-            this.getNode(node.id)
+            localStorage.setItem('currentId', node.id)
+            this.markCurrent()
         },
 
         getNode: function(id) {
+            localStorage.setItem('currentId', id)
             let url = baseUrl + "/question/get?id=" + id
             fetch(url, {
                 method: 'GET',
@@ -345,18 +335,46 @@ export default {
                 result = result + sub
             })
             return result
+        },
+
+        markCurrent: function () {
+            let nodes = document.getElementsByClassName('org-tree-node-label-inner');
+
+            let currentId = localStorage.getItem('currentId')
+
+            for (var i = 0; i < nodes.length; i++) {
+                let node = nodes[i]
+
+                node.style.backgroundColor="#FFFFFF"
+                node.style.color="#2F3F52"
+
+                let id = node.__vueParentComponent.vnode.key
+                
+                if (currentId && currentId == id) {
+                    
+                    localStorage.setItem('currentIdx', i)
+                    setTimeout(() => {
+                        let idx = localStorage.getItem('currentIdx')
+                        let node = document.getElementsByClassName('org-tree-node-label-inner')[idx]
+                        
+                        node.style.backgroundColor="#0BBC7A"
+                        node.style.color="#FFFFFF"
+
+                        this.getNode(id)
+                    }, 1)
+                }
+            }
         }
     },
     data() {
         return {
             read: false,
-            showEditor: false,
             rootId: 0,
             moveTarget: 0,
             currentNode: {},
             preQuestion: {},
             currentQuestion: {},
-            editMode: true,
+            editMode: false,
             he: {},
             md: {},
             hljs: {},
